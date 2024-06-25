@@ -2,8 +2,10 @@ import type { APIRoute } from "astro"
 import { addPokemon, getPokemonList } from "../../../services/pokemon"
 
 export const GET: APIRoute = async (context) => {
-  const page = parseInt(context.url.searchParams.get('page') ?? '1', 10)
-  return new Response(JSON.stringify(await getPokemonList(page)), {
+  const pokemons = await getPokemonList();
+  
+  
+  return new Response(JSON.stringify(pokemons), {  
     headers: {
       'content-type': 'application/json',
       'Access-Control-Allow-Origin': '*',
@@ -12,14 +14,33 @@ export const GET: APIRoute = async (context) => {
 }
 
 export const POST: APIRoute = async (context) => {
-  const pokemon = await context.request.json()
+  const data = await context.request.formData();
+
+  const id = parseInt(data.get('id') as string)
+  const name = data.get('name') as string
+  
+  if (!id || !name) {
+
+    return context.redirect('/?error=Invalid%20input')
+
+  }
+
+  const pokemon = {id, name}
 
   await addPokemon(pokemon)
 
-  return new Response(JSON.stringify(pokemon), {
+  return new Response(JSON.stringify(await getPokemonList()), {
+
     headers: {
+
       'content-type': 'application/json',
+
       'Access-Control-Allow-Origin': '*',
+
+      'Cache-Control' : 'no-cache' // desactivar el caché
+
     }
+
   })
+
 }

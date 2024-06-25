@@ -9,10 +9,10 @@
 <body>
   <main class="container mx-auto flex flex-col">
 		<h1 class="text-5xl text-red-600 font-extrabold text-center">Pokedex</h1>
-		<form action="/api/pokemon" method="post">
+		<form id="myForm" action="api/pokemon" method="post">
 			<h2 class="text-2xl text-red-700 font-bold">Agregar nuevo pokemon</h2>
-			<input type="number" name="id" placeholder="ID" class="my-1 w-full p-2 border border-gray-300 rounded-lg" />
-			<input type="text" name="name" placeholder="Name" class="my-1 w-full p-2 border border-gray-300 rounded-lg" />
+			<input type="number" id="id" name="id" placeholder="ID" class="my-1 w-full p-2 border border-gray-300 rounded-lg" />
+			<input type="text" id="name" name="name" placeholder="Name" class="my-1 w-full p-2 border border-gray-300 rounded-lg" />
 			<button type="submit" class="w-full p-2 bg-red-600 text-white rounded-lg mt-2 font-bold uppercase duration-200 hover:bg-red-700">Agregar</button>
 		</form>
 		<ul class="mt-4 border-4 border-red-700">
@@ -23,5 +23,111 @@
 			</li>
 		</ul>
 	</main>
+<script>
+	async function buscarPokemones() {
+    	const response = await fetch('http://localhost:4321/api/pokemon.json');
+    	const pokemons = await response.json();
+		return pokemons;
+	}
+
+	async function actualizarListaPokemon(){
+		var pokemons = await buscarPokemones();
+		pokemons = pokemons.list;
+		const ul = document.querySelector(".mt-4.border-4.border-red-700");
+		ul.innerHTML = "";
+
+		const headerRow = document.createElement('li');
+		headerRow.setAttribute('class', 'flex items-center justify-between border-b border-gray-300 p-2 bg-red-700')
+
+		const idHeader = document.createElement('span');
+		idHeader.setAttribute('class','text-lg text-white font-extrabold w-1/3')
+		idHeader.textContent = "ID"
+
+		const nameHeader = document.createElement('span');
+		nameHeader.setAttribute('class','text-lg text-white font-extrabold w-1/3 text-center')
+		nameHeader.textContent = "Name"
+
+		const deleteHeader = document.createElement('span');
+		deleteHeader.setAttribute('class','text-lg text-white font-extrabold w-1/3 text-right')
+		deleteHeader.textContent = "DELETE"
+
+		headerRow.appendChild(idHeader)
+		headerRow.appendChild(nameHeader)
+		headerRow.appendChild(deleteHeader)
+		ul.appendChild(headerRow)
+
+
+		pokemons.forEach(pokemon => {
+			const li = document.createElement('li');
+			li.setAttribute('class','flex items-center justify-between border-b border-gray-300 p-2');
+
+			const spanid = document.createElement('span');
+			spanid.setAttribute('class','text-lg text-red-600 font-bold w-1/3');
+			spanid.textContent = pokemon.id;
+
+			const spanname = document.createElement('span');
+			spanname.setAttribute('class','text-lg text-red-600 font-bold w-1/3 text-center');
+			spanname.textContent = pokemon.name;
+
+			const formdelete = document.createElement('form');
+			//formdelete.setAttribute('action','api/pokemon/${pokemon.id}')
+			//formdelete.setAttribute('method','post')
+			formdelete.setAttribute('class',"w-1/3 text-right myFormDelete")
+			formdelete.dataset.pokemonId = pokemon.id;
+
+			const auxbuttondelete = document.createElement('button');
+			auxbuttondelete.setAttribute('class',"font-bold hover:font-extrabold")
+			auxbuttondelete.setAttribute('type',"submit")
+			auxbuttondelete.textContent = "X";
+
+			formdelete.appendChild(auxbuttondelete);
+
+			li.appendChild(spanid);
+			li.appendChild(spanname);
+			li.appendChild(formdelete);
+			ul.appendChild(li);	
+		})
+
+		const formsDelete = document.querySelectorAll(".myFormDelete");
+
+		formsDelete.forEach(function(formDelete){
+			formDelete.addEventListener('submit', async function(event){
+				event.preventDefault();
+				const idPokemonBorrar = formDelete.dataset.pokemonId;
+				const response = await fetch(`http://localhost:4321/api/pokemon/${idPokemonBorrar}.json`, { method: 'DELETE' });
+
+				if (response.ok ){
+					actualizarListaPokemon();
+				}else{
+					console.error("Error al eliminar el Pokémon")
+				}
+
+			})
+		})
+	}
+
+	document.addEventListener("DOMContentLoaded", function() {
+		document.getElementById("myForm").addEventListener("submit", function(event) {
+			event.preventDefault();
+			const id = document.getElementById("id").value;
+			const name = document.getElementById("name").value;
+			if (!id || !name) {
+				alert("Por favor complete todos los campos");
+				return;
+			}
+			const formData = new FormData();
+			formData.append('id',id)
+			formData.append('name',name)
+			fetch("http://localhost:4321/api/pokemon.json", {
+					method: "POST",
+					body: formData
+			}).then(()=> {
+				actualizarListaPokemon();
+			})
+		})
+		actualizarListaPokemon();
+	})
+
+</script> 
 </body>
 </html>
